@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Loading Screen</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,600;0,700;0,800;1,800;1,900&display=swap" rel="stylesheet">
+<style>
+  /* ====== COULEURS (modifie ici) ====== */
+  :root {
+    --blue: #19d943;        /* bandeau sous le logo (si activé) */
+    --blue-dark: #0a8f28;
+    --cyan: #4dff7a;        /* liens, accents */
+    --bar: #39ff5a;         /* barre de chargement */
+    --text: #ffffff;
+    --muted: rgba(255, 255, 255, 0.65);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #020a03;
+    color: var(--text);
+    font-family: "Montserrat", Arial, sans-serif;
+  }
+
+  /* ====== FOND : images + vidéos ====== */
+  #media {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    overflow: hidden;
+    background: radial-gradient(ellipse at center, #0b3a14 0%, #020a03 75%);
+  }
+  .slide {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    opacity: 0;
+    -webkit-transition: opacity 1.8s ease;
+    transition: opacity 1.8s ease;
+  }
+  .slide.visible { opacity: 1; }
+  .slide .img {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background-size: cover;
+    background-position: center;
+    -webkit-animation: kenburns 25s ease-in-out infinite alternate;
+    animation: kenburns 25s ease-in-out infinite alternate;
+  }
+  .slide video {
+    position: absolute; top: 50%; left: 50%;
+    min-width: 100%; min-height: 100%;
+    width: auto; height: auto;
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    object-fit: cover;
+  }
+  /* Teinte bleue façon "duotone" (désactivable dans CONFIG.blueTint) */
+  body.tint .slide .img, body.tint .slide video {
+    -webkit-filter: grayscale(1) sepia(1) hue-rotate(165deg) saturate(2.2) brightness(0.72) contrast(1.15);
+    filter: grayscale(1) sepia(1) hue-rotate(165deg) saturate(2.2) brightness(0.72) contrast(1.15);
+  }
+  @-webkit-keyframes kenburns { from { -webkit-transform: scale(1.02); } to { -webkit-transform: scale(1.12) translate(-1.5%, -1%); } }
+  @keyframes kenburns { from { transform: scale(1.02); } to { transform: scale(1.12) translate(-1.5%, -1%); } }
+
+  .shade {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse at center, rgba(2,10,3,0) 45%, rgba(2,10,3,0.6) 100%),
+      linear-gradient(180deg, rgba(2,10,3,0.35) 0%, rgba(2,10,3,0) 25%, rgba(2,10,3,0) 65%, rgba(2,10,3,0.75) 100%);
+  }
+
+  /* ====== LETTRES GÉANTES EN CONTOUR ====== */
+  #bigtext {
+    position: fixed; top: 50%; left: 50%;
+    white-space: nowrap;
+    font-weight: 900; font-style: italic;
+    font-size: 34vw;
+    line-height: 1;
+    letter-spacing: -1vw;
+    color: transparent;
+    -webkit-text-stroke: 2px rgba(79, 209, 255, 0.35);
+    -webkit-transform: translate(-50%, -52%);
+    transform: translate(-50%, -52%);
+    -webkit-animation: drift 30s ease-in-out infinite alternate;
+    animation: drift 30s ease-in-out infinite alternate;
+    pointer-events: none;
+    opacity: 0;
+  }
+  body.ready #bigtext { opacity: 1; -webkit-transition: opacity 3s; transition: opacity 3s; }
+  @-webkit-keyframes drift { from { margin-left: -4vw; } to { margin-left: 4vw; } }
+  @keyframes drift { from { margin-left: -4vw; } to { margin-left: 4vw; } }
+
+  /* ====== ANIMATIONS SUR L'IMAGE ====== */
+  /* Battement lumineux du logo (copie de l'image masquée autour du logo) */
+  .slide .pulse {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: inherit;
+    background-size: cover;
+    background-position: center;
+    -webkit-mask-image: radial-gradient(ellipse 26% 24% at 50% 52%, #000 45%, transparent 100%);
+    mask-image: radial-gradient(ellipse 26% 24% at 50% 52%, #000 45%, transparent 100%);
+    -webkit-transform-origin: 50% 52%;
+    transform-origin: 50% 52%;
+    -webkit-animation: logoBeat 3.2s ease-in-out infinite;
+    animation: logoBeat 3.2s ease-in-out infinite;
+  }
+  @-webkit-keyframes logoBeat {
+    0%, 100% { opacity: 0; -webkit-transform: scale(1); -webkit-filter: brightness(1); }
+    12%      { opacity: 1; -webkit-transform: scale(1.035); -webkit-filter: brightness(1.7) saturate(1.3); }
+    30%      { opacity: 0.4; -webkit-transform: scale(1.01); -webkit-filter: brightness(1.2); }
+    45%      { opacity: 0.9; -webkit-transform: scale(1.025); -webkit-filter: brightness(1.5) saturate(1.2); }
+    70%      { opacity: 0; -webkit-transform: scale(1); -webkit-filter: brightness(1); }
+  }
+  @keyframes logoBeat {
+    0%, 100% { opacity: 0; transform: scale(1); filter: brightness(1); }
+    12%      { opacity: 1; transform: scale(1.035); filter: brightness(1.7) saturate(1.3); }
+    30%      { opacity: 0.4; transform: scale(1.01); filter: brightness(1.2); }
+    45%      { opacity: 0.9; transform: scale(1.025); filter: brightness(1.5) saturate(1.2); }
+    70%      { opacity: 0; transform: scale(1); filter: brightness(1); }
+  }
+  /* Halo vert derrière le logo */
+  #glow {
+    position: fixed; top: 52%; left: 50%;
+    width: 60vw; height: 40vh;
+    margin: -20vh 0 0 -30vw;
+    background: radial-gradient(ellipse at center, rgba(57,255,90,0.35) 0%, rgba(57,255,90,0.08) 45%, rgba(57,255,90,0) 70%);
+    -webkit-animation: glow 3.2s ease-in-out infinite;
+    animation: glow 3.2s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @-webkit-keyframes glow { 0%, 70%, 100% { opacity: 0.25; } 12% { opacity: 1; } 45% { opacity: 0.8; } }
+  @keyframes glow { 0%, 70%, 100% { opacity: 0.25; } 12% { opacity: 1; } 45% { opacity: 0.8; } }
+  /* Reflet lumineux qui traverse l'écran */
+  #sweep {
+    position: fixed; top: -50%; left: -60%;
+    width: 35%; height: 200%;
+    background: linear-gradient(90deg, rgba(120,255,150,0) 0%, rgba(160,255,180,0.14) 50%, rgba(120,255,150,0) 100%);
+    -webkit-transform: rotate(20deg);
+    transform: rotate(20deg);
+    -webkit-animation: sweep 7s ease-in-out 2.5s infinite;
+    animation: sweep 7s ease-in-out 2.5s infinite;
+    pointer-events: none;
+  }
+  @-webkit-keyframes sweep { 0% { left: -60%; } 35%, 100% { left: 130%; } }
+  @keyframes sweep { 0% { left: -60%; } 35%, 100% { left: 130%; } }
+  /* Ligne de scan qui descend */
+  #scan {
+    position: fixed; left: 0; right: 0; top: -5%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(77,255,122,0.9), transparent);
+    box-shadow: 0 0 18px rgba(77,255,122,0.8);
+    opacity: 0.55;
+    -webkit-animation: scan 6s linear infinite;
+    animation: scan 6s linear infinite;
+    pointer-events: none;
+  }
+  @-webkit-keyframes scan { 0% { top: -5%; } 60%, 100% { top: 105%; } }
+  @keyframes scan { 0% { top: -5%; } 60%, 100% { top: 105%; } }
+  /* Flash d'entrée */
+  #flash {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: #b6ffc6;
+    pointer-events: none;
+    -webkit-animation: flash 1.4s ease-out 0.2s both;
+    animation: flash 1.4s ease-out 0.2s both;
+  }
+  @-webkit-keyframes flash { 0% { opacity: 0; } 8% { opacity: 0.85; } 100% { opacity: 0; } }
+  @keyframes flash { 0% { opacity: 0; } 8% { opacity: 0.85; } 100% { opacity: 0; } }
+  /* Entrée de l'image : zoom + flou → net, puis respiration lente */
+  .slide.first .img { -webkit-animation: heroIn 2.2s cubic-bezier(.2,.9,.25,1) both, breathe 12s ease-in-out 2.2s infinite alternate; animation: heroIn 2.2s cubic-bezier(.2,.9,.25,1) both, breathe 12s ease-in-out 2.2s infinite alternate; }
+  @-webkit-keyframes heroIn { from { -webkit-transform: scale(1.25); -webkit-filter: blur(14px) brightness(2); } to { -webkit-transform: scale(1.02); -webkit-filter: blur(0) brightness(1); } }
+  @keyframes heroIn { from { transform: scale(1.25); filter: blur(14px) brightness(2); } to { transform: scale(1.02); filter: blur(0) brightness(1); } }
+  @-webkit-keyframes breathe { from { -webkit-transform: scale(1.02); } to { -webkit-transform: scale(1.07); } }
+  @keyframes breathe { from { transform: scale(1.02); } to { transform: scale(1.07); } }
+
+  /* Mode "image avec logo intégré" : cache le logo HTML, chargement en bas */
+  body.nologo .logo-box, body.nologo .tag-wrap, body.nologo #bigtext { display: none; }
+  body.nologo .center { top: auto; bottom: 9vh; -webkit-transform: translateX(-50%); transform: translateX(-50%); }
+  body.nologo .loader { margin-top: 0; }
+
+  #particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+
+  /* ====== CENTRE : LOGO ====== */
+  .center {
+    position: fixed; top: 50%; left: 50%;
+    -webkit-transform: translate(-50%, -58%);
+    transform: translate(-50%, -58%);
+    text-align: center;
+    z-index: 3;
+  }
+  .logo-box { position: relative; display: inline-block; }
+
+  #logo-text {
+    display: block;
+    font-weight: 900; font-style: italic;
+    font-size: 9.5vw;
+    line-height: 0.95;
+    letter-spacing: -0.2vw;
+    text-transform: uppercase;
+    color: #fff;
+    background: linear-gradient(100deg, #fff 0%, #fff 42%, #bfeaff 50%, #fff 58%, #fff 100%);
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    -webkit-filter: drop-shadow(0 8px 30px rgba(0,0,0,0.55));
+    filter: drop-shadow(0 8px 30px rgba(0,0,0,0.55));
+    -webkit-animation: logoIn 1.2s cubic-bezier(.2,.9,.25,1) both, glare 5s linear 1.5s infinite;
+    animation: logoIn 1.2s cubic-bezier(.2,.9,.25,1) both, glare 5s linear 1.5s infinite;
+    padding: 0 1.5vw;
+  }
+  #logo-img {
+    display: none;
+    max-width: 60vw; max-height: 34vh;
+    -webkit-filter: drop-shadow(0 8px 30px rgba(0,0,0,0.55));
+    filter: drop-shadow(0 8px 30px rgba(0,0,0,0.55));
+    -webkit-animation: logoIn 1.2s cubic-bezier(.2,.9,.25,1) both;
+    animation: logoIn 1.2s cubic-bezier(.2,.9,.25,1) both;
+  }
+  @-webkit-keyframes logoIn {
+    from { opacity: 0; -webkit-transform: scale(1.35); -webkit-filter: blur(20px); }
+    to   { opacity: 1; -webkit-transform: scale(1); -webkit-filter: drop-shadow(0 8px 30px rgba(0,0,0,0.55)); }
+  }
+  @keyframes logoIn {
+    from { opacity: 0; transform: scale(1.35); filter: blur(20px); }
+    to   { opacity: 1; transform: scale(1); filter: drop-shadow(0 8px 30px rgba(0,0,0,0.55)); }
+  }
+  @-webkit-keyframes glare { from { background-position: 100% 0; } to { background-position: -200% 0; } }
+  @keyframes glare { from { background-position: 100% 0; } to { background-position: -200% 0; } }
+
+  /* Bandeau bleu sous le logo */
+  .tag-wrap { margin-top: 0.4vw; }
+  #tag {
+    position: relative;
+    display: inline-block;
+    padding: 0.35vw 1.6vw 0.25vw;
+    background: linear-gradient(180deg, var(--blue) 0%, var(--blue-dark) 100%);
+    box-shadow: 0 10px 40px rgba(30, 144, 255, 0.45), inset 0 1px 0 rgba(255,255,255,0.3);
+    font-weight: 800;
+    font-size: 4.2vw;
+    line-height: 1.1;
+    letter-spacing: 0.1vw;
+    text-transform: uppercase;
+    -webkit-transform-origin: left center;
+    transform-origin: left center;
+    -webkit-animation: wipe 0.8s cubic-bezier(.7,0,.2,1) 0.7s both;
+    animation: wipe 0.8s cubic-bezier(.7,0,.2,1) 0.7s both;
+  }
+  #tag span {
+    display: inline-block;
+    -webkit-animation: fadeUp 0.6s ease 1.3s both;
+    animation: fadeUp 0.6s ease 1.3s both;
+  }
+  @-webkit-keyframes wipe { from { -webkit-transform: scaleX(0); } to { -webkit-transform: scaleX(1); } }
+  @keyframes wipe { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @-webkit-keyframes fadeUp { from { opacity: 0; -webkit-transform: translateY(40%); } to { opacity: 1; -webkit-transform: translateY(0); } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(40%); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Petits triangles bleus autour du logo */
+  .tri {
+    position: absolute;
+    width: 0; height: 0;
+    border-left: 0.55vw solid transparent;
+    border-right: 0.55vw solid transparent;
+    border-bottom: 1vw solid var(--blue);
+    -webkit-filter: drop-shadow(0 0 8px rgba(30,144,255,0.8));
+    filter: drop-shadow(0 0 8px rgba(30,144,255,0.8));
+    opacity: 0;
+    -webkit-animation: triIn 0.6s ease both, float 4s ease-in-out infinite;
+    animation: triIn 0.6s ease both, float 4s ease-in-out infinite;
+  }
+  .tri.t1 { top: -1.5vw; left: 34%;  -webkit-transform: rotate(40deg);  transform: rotate(40deg);  -webkit-animation-delay: 1.4s, 2s;   animation-delay: 1.4s, 2s; }
+  .tri.t2 { top: 12%;    right: -1vw; -webkit-transform: rotate(-30deg); transform: rotate(-30deg); -webkit-animation-delay: 1.55s, 2.3s; animation-delay: 1.55s, 2.3s; }
+  .tri.t3 { top: 38%;    left: -1.5vw; -webkit-transform: rotate(160deg); transform: rotate(160deg); -webkit-animation-delay: 1.7s, 2.6s; animation-delay: 1.7s, 2.6s; }
+  .tri.t4 { bottom: 30%; right: 22%;  -webkit-transform: rotate(80deg);  transform: rotate(80deg);  -webkit-animation-delay: 1.85s, 2.9s; animation-delay: 1.85s, 2.9s; border-bottom-width: 0.7vw; border-left-width: 0.4vw; border-right-width: 0.4vw; }
+  @-webkit-keyframes triIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes triIn { from { opacity: 0; } to { opacity: 1; } }
+  @-webkit-keyframes float { 0%, 100% { margin-top: 0; } 50% { margin-top: -0.6vw; } }
+  @keyframes float { 0%, 100% { margin-top: 0; } 50% { margin-top: -0.6vw; } }
+
+  /* ====== CHARGEMENT ====== */
+  .loader {
+    width: 28vw; min-width: 300px;
+    margin: 4.5vw auto 0;
+    text-align: left;
+    -webkit-animation: fadeUp 0.8s ease 1.6s both;
+    animation: fadeUp 0.8s ease 1.6s both;
+  }
+  #status {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .bar { position: relative; height: 3px; background: rgba(255,255,255,0.18); }
+  .bar-fill {
+    position: absolute; top: 0; left: 0; bottom: 0;
+    width: 0%;
+    background: var(--bar);
+    box-shadow: 0 0 12px var(--bar), 0 0 2px var(--bar);
+    -webkit-transition: width 0.5s ease;
+    transition: width 0.5s ease;
+  }
+  .bar-fill:after {
+    content: ""; position: absolute; right: -3px; top: -3px;
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 12px var(--bar), 0 0 24px var(--bar);
+  }
+  .loader-row { display: -webkit-box; display: flex; -webkit-box-pack: justify; justify-content: space-between; -webkit-box-align: center; align-items: center; margin-top: 10px; }
+  #percent { font-size: 18px; font-weight: 800; }
+  #files { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 1px; }
+  #file {
+    margin-top: 6px;
+    font-size: 10px; color: rgba(255,255,255,0.35);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  /* ====== COINS ====== */
+  .corner { position: fixed; z-index: 3; -webkit-animation: fadeUp 0.8s ease 2s both; animation: fadeUp 0.8s ease 2s both; }
+  .bl, .br { display: none !important; }  /* textes en bas à gauche / droite cachés */
+  .bl { left: 3vw; bottom: 3vh; font-size: 12px; font-weight: 600; color: var(--muted); line-height: 1.8; }
+  .bl b { color: #fff; font-weight: 800; }
+  .br { right: 3vw; bottom: 3vh; text-align: right; }
+  #tip {
+    font-size: 1.6vw; font-weight: 900; font-style: italic;
+    text-shadow: 0 3px 12px rgba(0,0,0,0.7);
+    -webkit-transition: opacity 0.5s, -webkit-transform 0.5s;
+    transition: opacity 0.5s, transform 0.5s;
+  }
+  #tip small { display: block; font-size: 0.9vw; font-weight: 800; opacity: 0.9; }
+  #tip.out { opacity: 0; -webkit-transform: translateX(20px); transform: translateX(20px); }
+  .tr { right: 3vw; top: 3vh; font-size: 12px; font-weight: 700; letter-spacing: 1px; }
+  .tr a { color: var(--cyan); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div id="media"></div>
+<div id="glow"></div>
+<div class="shade"></div>
+<div id="sweep"></div>
+<div id="scan"></div>
+<div id="bigtext"></div>
+<canvas id="particles"></canvas>
+
+<div class="center">
+  <div class="logo-box">
+    <i class="tri t1"></i><i class="tri t2"></i><i class="tri t3"></i><i class="tri t4"></i>
+    <span id="logo-text">Serveur</span>
+    <img id="logo-img" alt="">
+  </div>
+  <div class="tag-wrap"><div id="tag"><span id="tag-text">Easy RP</span></div></div>
+
+  <div class="loader">
+    <div id="status">Connexion au serveur...</div>
+    <div class="bar"><div class="bar-fill" id="bar"></div></div>
+    <div class="loader-row">
+      <div id="percent">0%</div>
+      <div id="files"></div>
+    </div>
+    <div id="file"></div>
+  </div>
+</div>
+
+<div class="corner bl">
+  <div>Carte · <b id="map">—</b></div>
+  <div>Mode · <b id="gamemode">—</b></div>
+  <div>Slots · <b id="maxplayers">—</b></div>
+</div>
+<div class="corner br"><div id="tip"></div></div>
+<div class="corner tr" id="links"></div>
+
+<div id="flash"></div>
+<audio id="music" loop></audio>
+
+<script>
+  /* =====================================================
+     CONFIGURATION — modifie uniquement cette partie
+     ===================================================== */
+  var CONFIG = {
+    showLogo: false,            // false = ton image contient déjà le logo
+    title: "ALTAS",             // gros texte du logo si showLogo = true (vide = nom du serveur)
+    tag: "RP",                  // texte dans le bandeau (vide = caché)
+    logoImage: "",              // ex: "media/logo.png" → remplace le texte par ton image
+    bigText: "",                // lettres géantes en fond (vide = même que title)
+
+    // ---- TES IMAGES ET VIDÉOS DE FOND ----
+    // Qualité max : utilise des images 2560x1440 ou 3840x2160 (4K), en .jpg qualité 90+ ou .png.
+    // Vidéos : .webm de préférence.
+    // type: "image" ou "video" | duration: durée d'affichage en ms
+    media: [
+      // logoPulse: true → fait "battre" le logo au centre de l'image
+      { type: "image", src: "media/altas%20loading.png", duration: 10000, logoPulse: true }
+      // { type: "image", src: "media/screen1.jpg", duration: 9000 },
+      // { type: "video", src: "media/video1.webm" }
+    ],
+    shuffle: false,
+    blueTint: false,            // teinte bleue sur les images/vidéos (false = couleurs d'origine)
+
+    particles: true,
+    particleColor: [77, 255, 122],  // couleur RGB des particules (vert)
+    bokehCount: 45,             // grosses bulles floues
+    streakCount: 60,            // petits traits qui tombent
+
+    unitLabel: "fichiers",      // "18 / 68 fichiers"
+    tips: [                     // texte en bas à droite (ligne 1 | ligne 2)
+      "Plus que quelques secondes...|avant de rejoindre Altas RP",
+      "Rejoins notre Discord !|annonces, events et recrutements",
+      "Lis bien le règlement|le staff veille au bon RP"
+    ],
+    tipDelay: 7000,
+
+    music: "",                  // ex: "media/musique.mp3"
+    musicVolume: 0.3,
+    videoSound: false,
+    links: '<a href="#">discord.gg/tonserveur</a>'
+  };
+
+  /* ===================================================== */
+
+  function $(id) { return document.getElementById(id); }
+  function setText(id, txt) { var el = $(id); el.innerHTML = ""; el.appendChild(document.createTextNode(txt)); }
+
+  var filesTotal = 0, filesNeeded = 0, gameVolume = 1, shownPct = 0, targetPct = 0;
+
+  // ---------- Initialisation ----------
+  if (CONFIG.blueTint) document.body.className += " tint";
+  if (!CONFIG.showLogo) document.body.className += " nologo";
+  $("links").innerHTML = CONFIG.links;
+
+  function applyTitle(name) {
+    setText("logo-text", name);
+    setText("bigtext", CONFIG.bigText || name);
+  }
+  if (CONFIG.title) applyTitle(CONFIG.title);
+  if (CONFIG.tag) setText("tag-text", CONFIG.tag); else $("tag").style.display = "none";
+  if (CONFIG.logoImage) {
+    $("logo-img").src = CONFIG.logoImage;
+    $("logo-img").style.display = "inline-block";
+    $("logo-text").style.display = "none";
+  }
+  setTimeout(function () { document.body.className += " ready"; }, 800);
+
+  // ---------- Diaporama images / vidéos ----------
+  var mediaList = CONFIG.media.slice();
+  if (CONFIG.shuffle) mediaList.sort(function () { return Math.random() - 0.5; });
+  var mediaIndex = 0, currentSlide = null, mediaTimer = null, failures = 0;
+
+  function showNextMedia() {
+    if (!mediaList.length || failures >= mediaList.length) return;
+    clearTimeout(mediaTimer);
+    var item = mediaList[mediaIndex];
+    mediaIndex = (mediaIndex + 1) % mediaList.length;
+
+    var done = false;
+    function advance() { if (!done) { done = true; showNextMedia(); } }
+    function fail() { failures++; advance(); }
+
+    if (item.type === "video") {
+      var slide = document.createElement("div");
+      slide.className = "slide";
+      var v = document.createElement("video");
+      v.src = item.src;
+      v.autoplay = true;
+      v.muted = !CONFIG.videoSound;
+      v.volume = Math.max(0, Math.min(1, CONFIG.musicVolume * gameVolume));
+      if (mediaList.length === 1) v.loop = true;
+      else if (!item.duration) v.onended = advance;
+      v.onerror = fail;
+      v.oncanplay = function () { failures = 0; };
+      slide.appendChild(v);
+      reveal(slide, item, advance);
+      var p = v.play && v.play();
+      if (p && p.catch) p.catch(function () {});
+    } else {
+      // Précharge l'image en entier avant de l'afficher → pas d'image qui se charge par morceaux
+      var img = new Image();
+      img.onload = function () {
+        failures = 0;
+        var s = document.createElement("div");
+        s.className = currentSlide ? "slide" : "slide first";
+        var d = document.createElement("div");
+        d.className = "img";
+        d.style.backgroundImage = "url('" + item.src + "')";
+        if (item.logoPulse) {
+          var pl = document.createElement("div");
+          pl.className = "pulse";
+          d.appendChild(pl);
+        }
+        s.appendChild(d);
+        reveal(s, item, advance);
+      };
+      img.onerror = fail;
+      img.src = item.src;
+    }
+  }
+
+  function reveal(slide, item, advance) {
+    $("media").appendChild(slide);
+    void slide.offsetWidth;
+    setTimeout(function () { slide.className += " visible"; }, 30);
+    var old = currentSlide;
+    if (old) {
+      setTimeout(function () {
+        old.className = "slide";
+        setTimeout(function () {
+          var ov = old.getElementsByTagName("video")[0];
+          if (ov) { ov.pause(); ov.removeAttribute("src"); }
+          if (old.parentNode) old.parentNode.removeChild(old);
+        }, 2000);
+      }, 200);
+    }
+    currentSlide = slide;
+    if (mediaList.length > 1 && (item.type === "image" || item.duration)) {
+      mediaTimer = setTimeout(advance, item.duration || 9000);
+    }
+  }
+  showNextMedia();
+
+  // ---------- Particules : bulles floues + traits ----------
+  (function particles() {
+    if (!CONFIG.particles) return;
+    var canvas = $("particles"), ctx = canvas.getContext("2d");
+    var W, H, bokeh = [], streaks = [];
+    var dpr = window.devicePixelRatio || 1;
+    function resize() {
+      W = window.innerWidth; H = window.innerHeight;
+      canvas.width = W * dpr; canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    resize();
+    window.onresize = resize;
+
+    function rand(a, b) { return a + Math.random() * (b - a); }
+    function newBokeh(y) {
+      var depth = Math.random();                 // 0 = loin, 1 = très proche
+      return {
+        x: rand(0, W), y: y === undefined ? rand(0, H) : y,
+        r: 3 + depth * depth * 32,
+        stretch: rand(1.2, 2.2),
+        rot: rand(-0.9, -0.5),
+        vx: rand(0.1, 0.4) * (0.4 + depth),
+        vy: rand(0.3, 0.9) * (0.4 + depth),
+        a: rand(0.25, 0.7) * (1 - depth * 0.45),
+        t: rand(0, 6.28)
+      };
+    }
+    function newStreak(y) {
+      return { x: rand(0, W), y: y === undefined ? rand(0, H) : y, len: rand(6, 16), v: rand(1.5, 3.5), a: rand(0.3, 0.8) };
+    }
+    for (var i = 0; i < CONFIG.bokehCount; i++) bokeh.push(newBokeh());
+    for (var j = 0; j < CONFIG.streakCount; j++) streaks.push(newStreak());
+
+    // Bulle pré-rendue (dégradé radial) → rendu doux et rapide
+    var sprite = document.createElement("canvas");
+    sprite.width = sprite.height = 128;
+    var sc = sprite.getContext("2d");
+    var g = sc.createRadialGradient(64, 64, 0, 64, 64, 64);
+    var pc = CONFIG.particleColor.join(",");
+    g.addColorStop(0, "rgba(" + pc + ",0.95)");
+    g.addColorStop(0.45, "rgba(" + pc + ",0.55)");
+    g.addColorStop(0.75, "rgba(" + pc + ",0.18)");
+    g.addColorStop(1, "rgba(" + pc + ",0)");
+    sc.fillStyle = g;
+    sc.fillRect(0, 0, 128, 128);
+
+    var raf = window.requestAnimationFrame || window.webkitRequestAnimationFrame || function (f) { setTimeout(f, 16); };
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+
+      for (var i = 0; i < bokeh.length; i++) {
+        var b = bokeh[i];
+        b.t += 0.01;
+        b.x += b.vx + Math.sin(b.t) * 0.15;
+        b.y += b.vy;
+        if (b.y - b.r * 2 > H || b.x - b.r * 2 > W) { bokeh[i] = newBokeh(-40); bokeh[i].x = rand(-100, W); continue; }
+        ctx.save();
+        ctx.globalAlpha = b.a * (0.75 + Math.sin(b.t * 3) * 0.25);
+        ctx.translate(b.x, b.y);
+        ctx.rotate(b.rot);
+        ctx.scale(1, b.stretch);
+        ctx.drawImage(sprite, -b.r, -b.r, b.r * 2, b.r * 2);
+        ctx.restore();
+      }
+
+      ctx.strokeStyle = "rgb(" + pc + ")";
+      ctx.lineCap = "round";
+      ctx.lineWidth = 2;
+      for (var k = 0; k < streaks.length; k++) {
+        var s = streaks[k];
+        s.y += s.v; s.x += s.v * 0.35;
+        if (s.y > H + 20) { streaks[k] = newStreak(-20); continue; }
+        ctx.globalAlpha = s.a;
+        ctx.beginPath();
+        ctx.moveTo(s.x, s.y);
+        ctx.lineTo(s.x + s.len * 0.35, s.y + s.len);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      raf(draw);
+    }
+    draw();
+  })();
+
+  // ---------- Texte en bas à droite ----------
+  var tipIndex = 0;
+  function nextTip() {
+    if (!CONFIG.tips.length) return;
+    var el = $("tip");
+    el.className = "out";
+    setTimeout(function () {
+      var parts = CONFIG.tips[tipIndex].split("|");
+      el.innerHTML = "";
+      el.appendChild(document.createTextNode(parts[0]));
+      if (parts[1]) {
+        var sm = document.createElement("small");
+        sm.appendChild(document.createTextNode(parts[1]));
+        el.appendChild(sm);
+      }
+      el.className = "";
+      tipIndex = (tipIndex + 1) % CONFIG.tips.length;
+    }, 500);
+  }
+  nextTip();
+  setInterval(nextTip, CONFIG.tipDelay);
+
+  // ---------- Musique ----------
+  function startMusic() {
+    if (!CONFIG.music || $("music").getAttribute("src")) return;
+    var m = $("music");
+    m.src = CONFIG.music;
+    m.volume = Math.max(0, Math.min(1, CONFIG.musicVolume * gameVolume));
+    var p = m.play();
+    if (p && p.catch) p.catch(function () {});
+  }
+
+  // ---------- Progression ----------
+  function updateProgress() {
+    if (filesTotal > 0) targetPct = Math.round(((filesTotal - filesNeeded) / filesTotal) * 100);
+    targetPct = Math.max(0, Math.min(100, targetPct));
+    $("bar").style.width = targetPct + "%";
+    if (filesTotal > 0) setText("files", (filesTotal - filesNeeded) + " / " + filesTotal + " " + CONFIG.unitLabel);
+  }
+  setInterval(function () {
+    if (shownPct === targetPct) return;
+    shownPct += shownPct < targetPct ? 1 : -1;
+    setText("percent", shownPct + "%");
+  }, 25);
+
+  /* =====================================================
+     FONCTIONS APPELÉES PAR GARRY'S MOD
+     ===================================================== */
+  function GameDetails(servername, serverurl, mapname, maxplayers, steamid, gamemode, volume, language) {
+    if (!CONFIG.title) applyTitle(servername);
+    setText("map", mapname);
+    setText("gamemode", gamemode);
+    setText("maxplayers", String(maxplayers));
+    if (typeof volume === "number") gameVolume = volume;
+    startMusic();
+  }
+
+  function SetFilesTotal(total) { filesTotal = total; updateProgress(); }
+  function SetFilesNeeded(needed) { filesNeeded = needed; updateProgress(); }
+
+  function DownloadingFile(fileName) {
+    filesNeeded = Math.max(0, filesNeeded - 1);
+    setText("file", fileName);
+    setText("status", "Téléchargement...");
+    updateProgress();
+  }
+
+  var STATUS_FR = {
+    "Retrieving server info": "Récupération des infos...",
+    "Sending client info...": "Envoi des infos client...",
+    "Client info sent!": "Infos client envoyées !",
+    "Received all Lua files we needed!": "Fichiers Lua reçus !",
+    "Mounting Addons": "Montage des addons...",
+    "Workshop Complete": "Workshop terminé",
+    "Starting Lua...": "Démarrage de Lua...",
+    "Lua Started!": "Entrée en ville..."
+  };
+
+  function SetStatusChanged(status) {
+    setText("status", STATUS_FR[status] || status);
+    if (status === "Sending client info..." || status === "Lua Started!") {
+      targetPct = 100;
+      $("bar").style.width = "100%";
+    }
+  }
+
+  // Aperçu dans un navigateur normal (hors jeu) : simule un chargement
+  setTimeout(function () {
+    if ($("map").innerHTML !== "—") return;
+    GameDetails("Mon Serveur", "", "rp_downtown_v4c", 64, "STEAM_0:1:123456", "DarkRP", 1, "fr");
+    SetFilesTotal(68); SetFilesNeeded(68);
+    var n = 0;
+    var sim = setInterval(function () {
+      n++;
+      DownloadingFile("addons/workshop_" + (2800000000 + n * 1337) + ".gma");
+      if (n >= 68) { clearInterval(sim); SetStatusChanged("Sending client info..."); }
+    }, 180);
+  }, 2000);
+</script>
+</body>
+</html>
