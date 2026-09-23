@@ -413,19 +413,41 @@
     if (p && p.catch) p.catch(function () {});
   }
 
-  // ---------- Progression ----------
-  // GMod appelle DownloadingFile très souvent : on ne met à jour l'affichage
-  // que 10 fois par seconde au maximum.
-  var filesTotal = 0, filesNeeded = 0, lastFile = "", forced100 = false, dirty = true;
+  // ---------- Progression réelle ----------
+  // Le % suit les vraies étapes de connexion GMod :
+  //   0-30 %  : infos serveur + addons Workshop
+  //   30-80 % : téléchargement des fichiers (vrai nombre envoyé par GMod)
+  //   80-100% : envoi client, Lua, entrée en jeu
+  // Il ne recule jamais. GMod appelle DownloadingFile très souvent :
+  // l'affichage n'est mis à jour que 10 fois par seconde.
+  var filesTotal = 0, filesNeeded = 0, filesDone = 0, lastFile = "", stagePct = 0, dirty = true;
   var shownPct = -1;
+
+  var STAGE_PCT = {
+    "Retrieving server info": 5,
+    "Mounting Addons": 15,
+    "Workshop Complete": 30,
+    "Sending client info...": 82,
+    "Client info sent!": 86,
+    "Received all Lua files we needed!": 90,
+    "Starting Lua...": 95,
+    "Lua Started!": 100
+  };
+
+  function baseName(path) {
+    var p = String(path).replace(/\\/g, "/").split("/");
+    return p[p.length - 1];
+  }
 
   setInterval(function () {
     if (!dirty) return;
     dirty = false;
-    var pct = 0;
-    if (forced100) pct = 100;
-    else if (filesTotal > 0) pct = Math.round(((filesTotal - filesNeeded) / filesTotal) * 100);
-    pct = Math.max(0, Math.min(100, pct));
+    var pct = stagePct;
+    if (filesNeeded > 0 || filesDone > 0) {
+      var need = Math.max(filesNeeded + filesDone, 1);
+      pct = Math.max(pct, 30 + Math.round((filesDone / need) * 50));
+    }
+    pct = Math.max(shownPct, Math.min(100, pct));   // ne recule jamais
     if (pct !== shownPct) {
       shownPct = pct;
       var t = "scaleX(" + (pct / 100) + ")";
@@ -433,7 +455,11 @@
       $("bar").style.transform = t;
       setText("percent", pct + "%");
     }
-    if (filesTotal > 0) setText("files", (filesTotal - filesNeeded) + " / " + filesTotal + " " + CONFIG.unitLabel);
+    if (filesNeeded + filesDone > 0) {
+      setText("files", filesDone + " / " + (filesNeeded + filesDone) + " " + CONFIG.unitLabel);
+    } else if (filesTotal > 0) {
+      setText("files", filesTotal + " " + CONFIG.unitLabel + " (déjà en cache)");
+    }
     setText("file", lastFile);
   }, 100);
 
@@ -444,14 +470,13 @@
     startMusic(typeof volume === "number" ? volume : 1);
   }
   function SetFilesTotal(total) { filesTotal = total; dirty = true; }
-  function SetFilesNeeded(needed) { filesNeeded = needed; dirty = true; }
+  function SetFilesNeeded(needed) { filesNeeded = needed; filesDone = 0; stagePct = Math.max(stagePct, 30); dirty = true; }
   function DownloadingFile(fileName) {
-    filesNeeded = Math.max(0, filesNeeded - 1);
-    lastFile = fileName;
-    if (!downloading) { downloading = true; setText("status", "Téléchargement..."); }
+    if (filesNeeded > 0) { filesNeeded--; filesDone++; }
+    lastFile = fileName;   // vrai nom du fichier en cours
+    setText("status", "Téléchargement : " + baseName(fileName));
     dirty = true;
   }
-  var downloading = false;
 
   var STATUS_FR = {
     "Retrieving server info": "Récupération des infos...",
@@ -464,9 +489,10 @@
     "Lua Started!": "Entrée en ville..."
   };
   function SetStatusChanged(status) {
-    downloading = false;
+    // Statut inconnu (ex : nom d'un addon Workshop en téléchargement) → affiché tel quel
     setText("status", STATUS_FR[status] || status);
-    if (status === "Sending client info..." || status === "Lua Started!") forced100 = true;
+    if (STAGE_PCT[status]) stagePct = Math.max(stagePct, STAGE_PCT[status]);
+    else if (/workshop|addon|download/i.test(status) && stagePct < 30) stagePct = Math.min(29, Math.max(stagePct, 15) + 1);
     dirty = true;
   }
 
